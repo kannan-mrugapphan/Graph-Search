@@ -1,49 +1,38 @@
 // 733.
-
-//rum time - O(m * n) - all pixels have same color as image[sr][sc]
+//time - O(m * n)
 //space - O(m * n)
 class Solution {
     public int[][] floodFill(int[][] image, int sr, int sc, int newColor) {
         //edge
-        if(image == null || image.length == 0 || image[0].length == 0)
+        if(image == null || image.length == 0 || image[0].length == 0 || image[sr][sc] == newColor)
         {
-            return image;
+            return image; //return same image in case of empty image or src color is same as new color
         }
-        
-        //edge
-        if(image[sr][sc] == newColor)
-        {
-            return image;
-        }
-        
-        dfs(image, sr, sc, newColor);
-        
+        dfs(image, sr, sc, newColor, image[sr][sc]); //call recrsive helper to flood fill image
         return image;
     }
     
-    private void dfs(int[][] image, int row, int col, int newColor) {
-        
-        //store the old colour and flip to new colour
-        int oldColor = image[row][col];
-        image[row][col] = newColor;
-        
-        //recurse on neighbours within bounds
-        int[][] dirs = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
-        for(int[] direction : dirs)
+    //time - O(n * m)
+    //space - O(n * m) - max call stack size when all pixels have same src color
+    private void dfs(int[][] image, int sr, int sc, int newColor, int oldColor) {
+        //base
+        if(image[sr][sc] != oldColor) //return if neighbor pixel has a different color than src pixel
         {
-            int nRow = direction[0] + row;
-            int nCol = direction[1] + col;
-            
+            return;
+        }
+        //logic
+        image[sr][sc] = newColor; //update color of src pixel
+        int[][] dirs = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}}; //4 possible neighbors
+        for(int[] dir : dirs)
+        {
+            int nRow = sr + dir[0];
+            int nCol = sc + dir[1];
             if(nRow >= 0 && nRow < image.length && nCol >= 0 && nCol < image[0].length)
             {
-                //neighbour pixel within bounds
-                if(image[nRow][nCol] == oldColor)
-                {
-                    dfs(image, nRow, nCol, newColor);
-                }
+                //neighbor within bounds
+                dfs(image, nRow, nCol, newColor, oldColor); //recurse on neighbors
             }
         }
-        
         return;
     }
 }
