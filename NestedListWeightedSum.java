@@ -1,36 +1,61 @@
+/**
+ * // This is the interface that allows for creating nested lists.
+ * // You should not implement it, or speculate about its implementation
+ * public interface NestedInteger {
+ *     // Constructor initializes an empty nested list.
+ *     public NestedInteger();
+ *
+ *     // Constructor initializes a single integer.
+ *     public NestedInteger(int value);
+ *
+ *     // @return true if this NestedInteger holds a single integer, rather than a nested list.
+ *     public boolean isInteger();
+ *
+ *     // @return the single integer that this NestedInteger holds, if it holds a single integer
+ *     // Return null if this NestedInteger holds a nested list
+ *     public Integer getInteger();
+ *
+ *     // Set this NestedInteger to hold a single integer.
+ *     public void setInteger(int value);
+ *
+ *     // Set this NestedInteger to hold a nested list and adds a nested integer to it.
+ *     public void add(NestedInteger ni);
+ *
+ *     // @return the nested list that this NestedInteger holds, if it holds a nested list
+ *     // Return empty list if this NestedInteger holds a single integer
+ *     public List<NestedInteger> getList();
+ * }
+ */
 // 339.
-// time - total number of nested elements
-// space - longest nested child - depth of call stack
+// time - O(number of integers in all the list)
+// space - O(length of longest nested list)
 class Solution {
+    int result = 0; //return value
+    
     public int depthSum(List<NestedInteger> nestedList) {
         //edge
         if(nestedList == null || nestedList.size() == 0)
         {
-            return 0;
+            return result;
         }
-        int[] result = new int[1]; //return value
-        for(NestedInteger current : nestedList)
-        {
-            dfs(current, 1, result); //depth starts from 1
-        }
-        return result[0];
+        
+        dfs(nestedList, 1); //all elements in the given nestedList are at depth 1
+        
+        return result;
     }
     
-    private void dfs(NestedInteger current, int depth, int[] result) {
-        //base - isInteger() is a terminating condition
-        //logic
-        if(current.isInteger())
+    private void dfs(List<NestedInteger> current, int depth) {
+        //go through each nested integer in the list
+        for(NestedInteger nested : current) 
         {
-            result[0] += (current.getInteger() * depth);
-            return;
-        }
-        else //recurse on each nested integer in the list at this level
-        {
-            for(NestedInteger child : current.getList())
+            if(nested.isInteger()) //if integer, manipulate result
             {
-                dfs(child, depth + 1, result); //nested element is at a higher depth (1 higher than caller)
+                result += depth * nested.getInteger();
+            }
+            else //recurse on the child list with depth increased by 1
+            {
+                dfs(nested.getList(), depth + 1);
             }
         }
-        return;
     }
 }
