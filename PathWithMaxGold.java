@@ -3,7 +3,6 @@
 // space - O(mn) -> visited array and call stack
 class Solution {
     
-    int maxGold = 0;
     int[][] dirs = {{0, 1}, {0, -1}, {-1, 0}, {1, 0}};
     
     public int getMaximumGold(int[][] grid) {
@@ -12,6 +11,8 @@ class Solution {
         {
             return 0;
         }
+        
+        int maxGold = 0; //return value
         
         for(int i = 0; i < grid.length; i++)
         {
