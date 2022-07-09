@@ -1,69 +1,77 @@
 // 1192.
-//time - O(V + E)
-//space - O(V)
-
 class Solution {
-    int time = 0;
-    List<List<Integer>> criticalEdges;
+    
+    int time = 1; //global timer -> increases by 1 after visiting every node
+    HashMap<Integer, List<Integer>> graph = new HashMap<>();
+    List<List<Integer>> result = new ArrayList<>();
     
     public List<List<Integer>> criticalConnections(int n, List<List<Integer>> connections) {
-        HashMap<Integer, List<Integer>> graph = new HashMap<>();
-        buildGraph(graph, connections, n);
         
-        int[] discovery = new int[n]; //each index in discover[] tracks the order of flow of dfs to reach node i
-        Arrays.fill(discovery, -1); //initially fill discovery[] with -1s since no node is visited
-        int[] lowest = new int[n]; //lowest[i] tracks the earliest discovered node that can be reached from i
+        int[] disc = new int[n]; //tracks the discovery time of each node, if node is unvistied, discovery time of it is 0
+        int[] low = new int[n]; //low[i] is smallest discovery time reachable from i
         
-        criticalEdges = new ArrayList<>(); //return val
-        dfs(graph, 0, 0, discovery, lowest); //start from 0th node - parent of this is itself
-       
-        return criticalEdges;
+        buildGraph(connections);
+        
+        dfs(0, -1, disc, low);
+        
+        return result;
     }
     
-    //time - O(number of edges)
-    //space - O(1)
-    private void buildGraph(HashMap<Integer, List<Integer>> graph, List<List<Integer>> connections, int numberOfNodes) {
-        for(int i = 0; i < numberOfNodes; i++)
-        {
-            graph.put(i, new ArrayList<>()); //creating an empty array list to each node and inserting it to map
-        }
+    //time - O(E)
+    private void buildGraph(List<List<Integer>> connections) {
         for(List<Integer> edge : connections)
         {
-            int from = edge.get(0); //for each edge, get the source and dest vertex
-            int to = edge.get(1);
-            graph.get(from).add(to); //add to to neighber list of from
-            graph.get(to).add(from); //add from to neighbor list of to
-            //both are added, since edge is undirected
+            //bidirectional edge
+            int src = edge.get(0);
+            int dest = edge.get(1);
+            if(!graph.containsKey(src))
+            {
+                graph.put(src, new ArrayList<>());
+            }
+            if(!graph.containsKey(dest))
+            {
+                graph.put(dest, new ArrayList<>());
+            }
+            graph.get(src).add(dest);
+            graph.get(dest).add(src);
         }
         return;
     }
     
-    //time - O(V + E)
-    //space - O(V)
-    private void dfs(HashMap<Integer, List<Integer>> graph, int current, int parent, int[] discovery, int[] lowest) {
-        //base
-        if(discovery[current] != -1)
-        {
-            return;
-        }
+    //time - O(V+E)
+    private void dfs(int node, int parent, int[] disc, int[] low) {
         //logic
-        discovery[current] = time; //setting time and marking current as visited
-        lowest[current] = time;
-        time++;
-        //recurse on neighbors
-        for(Integer neighbor : graph.get(current)) 
+        //visit node
+        disc[node] = time;
+        low[node] = time;
+        time++; //time increases by 1 for next node
+        for(int neighbor : graph.get(node))
         {
-            if(neighbor == parent) //dont recurse if neighbor is parrent of current
+            if(neighbor == parent)
             {
                 continue;
             }
-            dfs(graph, neighbor, current, discovery, lowest);
-            if(lowest[neighbor] > discovery[current]) //add edge to result conditionally
+            if(disc[neighbor] == 0)
             {
-                criticalEdges.add(Arrays.asList(current, neighbor));
+                //unvisited neighbor - recurse
+                dfs(neighbor, node, disc, low);
+                //after coming back, update low due to a potential back edge found at neighbor
+                low[node] = Math.min(low[node], low[neighbor]);
+                if(disc[node] < low[neighbor])
+                {
+                    //no back edge for neighbor -- critical edge
+                    List<Integer> cEdge = new ArrayList<>();
+                    cEdge.add(node);
+                    cEdge.add(neighbor);
+                    result.add(cEdge);
+                }
+                
             }
-            lowest[current] = Math.min(lowest[current], lowest[neighbor]); //update lowest of current
+            else //base case
+            {
+                //back edge found (there is a path to reach node other than coming from parent i.e. by coming through neighbor) -> low of node is updated as we find another node with small disc time
+                low[node] = Math.min(low[node], disc[neighbor]);
+            }
         }
-        return;
     }
 }
