@@ -111,3 +111,59 @@ class Solution {
         return false;
     }
 }
+
+//cycles in directed graphs
+class Solution {
+    // Function to detect cycle in a directed graph.
+    public boolean isCyclic(int V, ArrayList<ArrayList<Integer>> adj) {
+        HashSet<Integer> visited = new HashSet<>();
+        HashSet<Integer> pathVisited = new HashSet<>();
+        
+        for(int i = 0; i < V; i++)
+        {
+            //current node unvisited
+            if(!visited.contains(i))
+            {
+                //component with ith node is cyclic
+                if(hasCycles(adj, visited, pathVisited, i))
+                {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    private boolean hasCycles(ArrayList<ArrayList<Integer>> adj, HashSet<Integer> visited, HashSet<Integer> pathVisited, int node)
+    {
+        visited.add(node); //mark node as visited
+        pathVisited.add(node); //node is visited in current path
+        
+        ArrayList<Integer> neighbors = adj.get(node); 
+        if(neighbors != null)
+        {
+            for(int neighbor : neighbors)
+            {
+                //neighbor already visited and path visited
+                if(visited.contains(neighbor) && pathVisited.contains(neighbor))
+                {
+                    return true;
+                }
+                //neighbor visited
+                if(visited.contains(neighbor))
+                {
+                    continue;
+                }
+                //neighbor unvisited
+                if(!visited.contains(neighbor) && hasCycles(adj, visited, pathVisited, neighbor))
+                {
+                    return true;
+                }
+            }
+        }
+        
+        pathVisited.remove(node); //remove from path so current node can be included in other paths
+        return false;
+    }
+}
