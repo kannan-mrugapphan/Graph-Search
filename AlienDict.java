@@ -1,106 +1,146 @@
 // 269.
-// time - O(length of words[] * avg length of word in words[])
-// space - O(length of o/p string)
-
 class Solution {
-    HashMap<Character, HashSet<Character>> graph;
-    int[] inDegree;
     public String alienOrder(String[] words) {
         //edge
         if(words == null || words.length == 0)
         {
             return "";
         }
-        graph = new HashMap<>();
-        inDegree = new int[26];
-        buildGraph(words);
-        return bfs();
-    }
-    
-    //time - O(length of words[] * avg length of word in words[])
-    //space - constant
-    private void buildGraph(String[] words) {
-        //edge case - words['z', 'z'] - expected o/p - z
-        //create an entry for every letter in words[]
-        for(String word : words)
+        if(words.length == 1)
         {
-            for(int i = 0; i < word.length(); i++)
+            //only 1 word, all unique chars present will be part of result
+            //eg: [abcd] -> abcd
+            //eg: [aba] -> ab
+            HashSet<Character> letters = new HashSet<>();
+            for(int i = 0; i < words[0].length(); i++)
             {
-                if(!graph.containsKey(word.charAt(i)))
-                {
-                    graph.put(word.charAt(i), new HashSet<>());
-                }
+                letters.add(words[0].charAt(i));
             }
+
+            StringBuilder result = new StringBuilder();
+            for(Character ch : letters)
+            {
+                result.append(ch);
+            }
+
+            return result.toString();
         }
+
+        int[] indegrees = new int[26]; //all letters in english alphabet can be part of result order
+        HashMap<Character, List<Character>> graph = buildGraph(words, indegrees);
+        StringBuilder result = findTopologicalSort(graph, indegrees);
+        return result.toString();
+    }
+
+    //time - O(n) where n is length of words[]
+    //space - constant
+    private HashMap<Character, List<Character>> buildGraph(String[] words, int[] indegrees)
+    {
+        HashMap<Character, List<Character>> graph = new HashMap<>(); 
+
         for(int i = 0; i < words.length - 1; i++)
         {
-            String first = words[i]; //for each pair of words
-            String second = words[i + 1];
-            //edge - i/p words[] = {'abc', 'ab'} - o/p = ""
-            if(first.length() > second.length() && first.startsWith(second))
+            //returns false if invalid case is found, return empty graph
+            if(!processPair(words[i], words[i + 1], graph, indegrees))
             {
-                graph.clear(); //delete all entries so far
-            }
-            //get the first different character and create an edge between the first word and second word
-            for(int j = 0; j < first.length() && j < second.length(); j++)
-            {
-                char firstChar = first.charAt(j);
-                char secondChar = second.charAt(j);
-                if(firstChar != secondChar)
-                {
-                    if(graph.get(firstChar).add(secondChar)) //build the edge if edge is not already present
-                    {
-                        inDegree[secondChar - 'a']++; //increase indegree of dest
-                    }
-                    break;
-                }
+                return new HashMap<>();
             }
         }
-        return;
+
+        return graph;
     }
-    
-    //time - O(size of o/p string)
-    //space - O(size of o/p string)
-    private String bfs() {
-        Queue<Character> support = new LinkedList<>(); //for bfs
-        //for each character in keyset of graph, offer into queue if inDegree[character] = 0
-        for(Character letter : graph.keySet())
+
+    //time - O(m+n) where m is length of word1 and n is length of word2
+    //space - constant
+    private boolean processPair(String current, String next, HashMap<Character, List<Character>> graph, int[] indegrees)
+    {
+        //eg: abc, ab -> invalid test case
+        //whole test case is corrupted, return topological order should be empty string
+        //so graph should be cleared out
+        if(current.length() > next.length() && current.startsWith(next))
         {
-            if(inDegree[letter - 'a'] == 0)
-            {
-                support.offer(letter);
-            }
+            return false;
         }
         
-        StringBuilder result = new StringBuilder(); //return string
+        //all letters present in both words should be part of topological order i.e should be included in graph
+        for(int i = 0; i < current.length(); i++)
+        {
+            if(!graph.containsKey(current.charAt(i)))
+            {
+                graph.put(current.charAt(i), new ArrayList<>());
+            }
+        }
+        for(int i = 0; i < next.length(); i++)
+        {
+            if(!graph.containsKey(next.charAt(i)))
+            {
+                graph.put(next.charAt(i), new ArrayList<>());
+            }
+        }
+
+        //edge exists between characters that mismatch for the first time
+        //eg: ab, abc -> no edge
+        //eg: wrt, wrf -> t -> f
+        //eg: er, ett -> r -> t
+        int minLength = Math.min(current.length(), next.length());
+        for(int i = 0; i < minLength; i++)
+        {
+            //1st mismatch found
+            if(current.charAt(i) != next.charAt(i))
+            {
+                graph.get(current.charAt(i)).add(next.charAt(i));
+                indegrees[next.charAt(i) - 'a']++; //directed edge between current[i] -> next[i]
+                break;
+            }
+        }
+
+        return true;
+    }
+
+    //time - O(v+e)
+    //space - O(v)
+    private StringBuilder findTopologicalSort(HashMap<Character, List<Character>> graph, int[] indegrees)
+    {
+        Queue<Character> support = new LinkedList<>(); //to do topological sort
+        for(char ch = 'a'; ch <= 'z'; ch++)
+        {
+            //if current char is part of graph and has no depenedency (i.e indegree = 0)
+            if(graph.containsKey(ch) && indegrees[ch - 'a'] == 0)
+            {
+                support.offer(ch); //process current char in level 0 
+            }
+        }
+
+        StringBuilder result = new StringBuilder();
         while(!support.isEmpty())
         {
-            Character front = support.poll(); //remove thr front and append to result
-            result.append(front);
-            HashSet<Character> neighbors = graph.get(front);
-            if(neighbors != null)
+            Character current = support.poll();
+            result.append(current); //all dependecies of current resolved
+
+            if(graph.containsKey(current))
             {
-                //for each neighbor of polled element reduce indegree by 1 and add it to queue if indegree is 0
+                List<Character> neighbors = graph.get(current);
                 for(Character neighbor : neighbors)
                 {
-                    inDegree[neighbor - 'a']--;
-                    if(inDegree[neighbor - 'a'] == 0)
+                    indegrees[neighbor - 'a']--; //current -> neighbor edge resolved
+                    if(indegrees[neighbor - 'a'] == 0)
                     {
+                        //all incoming edges on neighbor resolved
                         support.offer(neighbor);
                     }
                 }
             }
         }
-        
-        //if indegree of any letter remains non zero return empty string
-        for(int i = 0; i < 26; i++)
+
+        for(char ch = 'a'; ch <= 'z'; ch++)
         {
-            if(inDegree[i] != 0)
+            //if current char is part of graph and has all depenedencies are not resolved (i.e indegree = 0)
+            if(graph.containsKey(ch) && indegrees[ch - 'a'] != 0)
             {
-                return "";
+                return new StringBuilder(); //no order possible
             }
         }
-        
-        return result.toString();
+
+        return result;
     }
 }
